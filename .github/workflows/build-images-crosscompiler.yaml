@@ -1,0 +1,118 @@
+name: Build Images
+
+on:
+  workflow_call:
+    inputs:
+      kuadrantOperatorTag:
+        description: Kuadrant Operator tag
+        default: latest
+        type: string
+      kuadrantOperatorVersion:
+        description: Kuadrant Operator version
+        default: 0.0.0
+        type: string
+      authorinoOperatorVersion:
+        description: Authorino Operator bundle version
+        default: latest
+        type: string
+      limitadorOperatorVersion:
+        description: Limitador Operator bundle version
+        default: latest
+        type: string
+      dnsOperatorVersion:
+        description: DNS Operator bundle version
+        default: latest
+        type: string
+      wasmShimVersion:
+        description: WASM Shim version
+        default: latest
+        type: string
+      replacesVersion:
+        description: Kuadrant Operator replaced version
+        default: 0.0.0-alpha
+        type: string
+      channels:
+        description: Bundle and catalog channels, comma separated
+        default: preview
+        type: string
+  workflow_dispatch:
+    inputs:
+      kuadrantOperatorTag:
+        description: Kuadrant Operator tag
+        default: latest
+        type: string
+      kuadrantOperatorVersion:
+        description: Kuadrant Operator version
+        default: 0.0.0
+        type: string
+      authorinoOperatorVersion:
+        description: Authorino Operator bundle version
+        default: latest
+        type: string
+      limitadorOperatorVersion:
+        description: Limitador Operator bundle version
+        default: latest
+        type: string
+      dnsOperatorVersion:
+        description: DNS Operator bundle version
+        default: latest
+        type: string
+      wasmShimVersion:
+        description: WASM Shim version
+        default: latest
+        type: string
+      replacesVersion:
+        description: Kuadrant Operator replaced version
+        default: 0.0.0-alpha
+        type: string
+      channels:
+        description: Bundle and catalog channels, comma separated
+        default: preview
+        type: string
+
+env:
+  IMG_TAGS: ${{ inputs.kuadrantOperatorTag }}
+  VERSION: ${{ inputs.kuadrantOperatorVersion }}
+  IMG_REGISTRY_HOST: dlawton
+  IMG_REGISTRY_ORG: kuadrant
+  MAIN_BRANCH_NAME: main
+  OPERATOR_NAME: kuadrant-operator
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Log in to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.IMG_REGISTRY_USERNAME }}
+          password: ${{ secrets.IMG_REGISTRY_TOKEN }}
+
+      - name: Build Image for Multi-Platforms
+        id: build-image
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag ${{ env.IMG_REGISTRY_HOST }}/${{ env.IMG_REGISTRY_ORG }}/${{ env.OPERATOR_NAME }}:${{ env.IMG_TAGS }} \
+            --file ./Dockerfile \
+            --push .
+
+      - name: Print Image URL
+        run: echo "Image pushed to ${{ env.IMG_REGISTRY_HOST }}/${{ env.IMG_REGISTRY_ORG }}/${{ env.OPERATOR_NAME }}:${{ env.IMG_TAGS }}"
