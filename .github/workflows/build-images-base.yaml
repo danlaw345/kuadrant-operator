@@ -74,7 +74,7 @@ env:
   IMG_TAGS: ${{ inputs.kuadrantOperatorTag }}
   VERSION: ${{ inputs.kuadrantOperatorVersion }}
   IMG_REGISTRY_HOST: quay.io
-  IMG_REGISTRY_ORG: kuadrant
+  IMG_REGISTRY_ORG: dlawton
   MAIN_BRANCH_NAME: main
   OPERATOR_NAME: kuadrant-operator
 
